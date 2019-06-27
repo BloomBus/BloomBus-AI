@@ -4,7 +4,7 @@ import * as turf from '@turf/turf'
 /**
  * Predicts the arrival time of the given bus at the given bus stop.
  * 
- * @author: Michael O'Donnell
+ * @author Michael O'Donnell
  * @param {LineString} loop The loop the bus is on.
  * @param {Feature} bus The geojson of the bus.
  * @param {Point} busStop The location of the bus stop.

@@ -1,3 +1,10 @@
+/**
+ * Trains the AI to predict when a bus will arrive at a bus stop.
+ * 
+ * @author Michael O'Donnell
+ * @version 0.1.0
+ */
+
 'use strict';
 
 // Import Firebase / Get the database (may be removed in future in favor of a download site that sends the database as two json files being developed by John Gibson)
