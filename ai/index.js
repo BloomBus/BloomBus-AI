@@ -11,7 +11,7 @@ import { createWriteStream, readFileSync, createReadStream } from 'fs';
 // If John Gibson's download site can be accessed from Node.js
 import { get, request as _request } from 'https';
 import { sequential, layers as _layers, train, tensor2d, callbacks as _callbacks, nextFrame } from '@tensorflow/tfjs-node-gpu';
-import { point as _point, lineString, nearestpointOnLine, length, lineSlice } from '@turf/turf';
+import { point as _point, lineString, nearestPointOnLine, length, lineSlice } from '@turf/turf';
 import { exec } from 'shelljs';
 
 // documentation for firebase can be found at https://firebase.google.com/docs/
@@ -48,8 +48,6 @@ async function prepareData(inputs, expectedOutputs) {
 	console.log('Retrieving data...');
 	// If John Gibson's download site can be accessed from Node.js, remove the firebase import
 	const garbage = await getData('loops', 'testData');
-
-	global.gc();
 
 	console.log('Extracting data...');
 	const data = {
@@ -143,7 +141,7 @@ async function prepareData(inputs, expectedOutputs) {
 	for (loop in testData) {
 		// snap points to the loop
 		for (point of loop.points) {
-			point = nearestpointOnLine(loop.loop, point, {units: unitOfMeasurement});
+			point = nearestPointOnLine(loop.loop, point, {units: unitOfMeasurement});
 		}
 		loop.points.forEach((point, pointIndex) => {
 			point.properties.distances = [];
@@ -184,8 +182,6 @@ async function learnBusArrival() {
 	let expectedOutputs = [];
 
 	const garbage = await prepareData(inputs, expectedOutputs);
-
-	global.gc();
 
 	console.log('Creating model...');
 
@@ -314,4 +310,6 @@ function uploadToServer() {
 	console.log('Success!');
 }
 
-learnBusArrival().then(uploadToServer());
+learnBusArrival().then(() => {
+	uploadToServer();
+});

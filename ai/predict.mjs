@@ -1,5 +1,5 @@
-import * as tf from '@tensorflow/tfjs-node-gpu'
-import * as turf from '@turf/turf'
+import { tensor1d, loadLayersModel } from '@tensorflow/tfjs-node-gpu'; // should likely change to tfjs-node for server deployment (function calls will remain the same)
+import { nearestPointOnLine, length, lineSlice } from '@turf/turf';
 
 /**
  * Predicts the arrival time of the given bus at the given bus stop.
@@ -12,11 +12,11 @@ import * as turf from '@turf/turf'
  */
 async function predictArrivalTime(loop, bus, busStop) {
 	const unitOfMeasurement = 'kilometers';
-	const busCoord = turf.nearestPointOfLine(loop, bus.geometry.coordinates, {units: unitOfMeasurement});
+	const busCoord = nearestPointOnLine(loop, bus.geometry.coordinates, {units: unitOfMeasurement});
 
-	const model = await tf.loadLayersModel('file:///home/nvidia/Documents/BloomBus/ai/model/model.json'/*, 'file:///home/nvidia/Documents/BloomBus/ai/model/something.bin'*/); // something.bin is the weights (might not be needed) (should load from server once set up)
-	let prediction = model.predict(tf.tensor1d([
-		turf.length(turf.lineSlice(busCoord, busStop, loop), {units: unitOfMeasurement}),
+	const model = await loadLayersModel('file:///home/nvidia/Documents/BloomBus/ai/model/model.json'/*, 'file:///home/nvidia/Documents/BloomBus/ai/model/something.bin'*/); // something.bin is the weights (might not be needed) (should load from server once set up)
+	let prediction = model.predict(tensor1d([
+		length(lineSlice(busCoord, busStop, loop), {units: unitOfMeasurement}),
 		// number of intersections from bus to bus stop,
 		// number of bus stops from bus to bus stop,
 		bus.speed,
@@ -30,4 +30,4 @@ async function predictArrivalTime(loop, bus, busStop) {
 	return prediction;
 }
 
-export { predictArrivalTime };
+export default predictArrivalTime;
