@@ -1,0 +1,42 @@
+- Need the access to the firebase database where the tracker app uploads the data it collects
+
+- Need bus route data (go to firebase console, go to realtime-database, View ->, and there's the GeoJSON)
+
+----------------------------------------------------------------------------------------------------
+
+- Realistically will only need a feed-forward network
+
+- Input (Simplify data into numbers)
+	- use current bus location and bus stop location to find distance between bus and bus stop (along the roads (might be able to query google maps to get this information))
+	- use the bus's current speed
+	- (not necessary (bus speed is what matters)) use the speed limits on the roads to the bus stop (likely passed as an array) (might not be necessary)
+	- use number of intersections between the bus and the bus stop
+	- (not necessary (angle variance is negligible)) use the angles of each intersection as a variable (likely passed as an array) (might not be necessary)
+	- (not necessary (can be implicit in other input variables)) use traffic conditions as a percentage of no movement to no issues (not much data available)
+	use weather data (particularly precipitation likelihood) as an extra percentage variable (might not be necessary)
+	- use time of day
+	- use day of week
+	- use month
+
+- More finalized list of inputs (6 inputs)
+	- use current bus location and bus stop location to find distance between bus and bus stop (along the roads (might be able to query google maps to get this information))
+	- use the bus's current speed
+	- use number of intersections between the bus and the bus stop
+	- use timestamps of the two points (pointA's being the input time and pointB's being the expected output)
+
+- Motivating a data model (Conceptualize how we might use this data to fit into a "function of the mind")
+	Let's first ask: How many layers of abstraction are we working with here between our input variables and our output variable? (How many steps might we use to reason a time from our inputs?)
+
+	--combine the speed limit with traffic conditions and weather conditions to find general speed from where the bus is to the bus stop
+
+- Output (Time)
+	All we want is one number, the predicted time for when the bus should arrive; however, artifical neural networks don't work that way so instead there should be an array of possible time outputs. (say 0 sec to 30 min with each output being 1 sec off of its neighbors) (there might be a better way of doing this)
+
+----------------------------------------------------------------------------------------------------
+
+Tensorflow pseudo-code
+
+create an asyncronus function
+	declare model
+	get data from database
+	await fitting the model (input, output, numOfGenerations)

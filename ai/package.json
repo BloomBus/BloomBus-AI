@@ -1,0 +1,27 @@
+{
+  "name": "bloombus-ai",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node --experimental-modules --no-warnings --expose-gc index.js",
+    "modernize": "sudo npm update -g @tensorflow/tfjs-node-gpu && sudo npm update -g @turf/turf && sudo npm update -g eslint && sudo npm update -g rollup && sudo npm update -g shelljs && sudo npm update -g npm@latest"
+  },
+  "engines": {
+    "node": ">=10.16.0",
+    "npm": ">=6.9.0"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs-node-gpu": "^1.2.1",
+    "@turf/turf": "^5.1.6",
+    "rollup": "^1.16.2",
+    "shelljs": "^0.8.3"
+  },
+  "devDependencies": {
+    "eslint": "^6.0.1"
+  },
+  "keywords": [],
+  "author": "Michael O'Donnell",
+  "type": "module"
+}
