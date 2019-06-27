@@ -7,28 +7,19 @@
 
 'use strict';
 
-// Import Firebase / Get the database (may be removed in future in favor of a download site that sends the database as two json files being developed by John Gibson)
-// import * as firebase from 'firebase'
-// import 'firebase/auth'
-// import 'firebase/database'
-import * as fs from 'fs'
-// const dbInfo = JSON.parse(fs.readFileSync('./dbInfo.json', 'utf8')); // contains sensitive data (do not put on GitHub)
-// let dbApp = firebase.initializeApp(dbInfo);
-// let db = dbApp.database();
-
+import { createWriteStream, readFileSync, createReadStream } from 'fs';
 // If John Gibson's download site can be accessed from Node.js
-import * as https from 'https'
+import { get, request as _request } from 'https';
+import { sequential, layers as _layers, train, tensor2d, callbacks as _callbacks, nextFrame } from '@tensorflow/tfjs-node-gpu';
+import { point as _point, lineString, nearestpointOnLine, length, lineSlice } from '@turf/turf';
+import { exec } from 'shelljs';
+
 // documentation for firebase can be found at https://firebase.google.com/docs/
-import * as tf from '@tensorflow/tfjs-node-gpu'
 // documentation for tensorflow.js can be found at https://js.tensorflow.org/api/latest/
-import * as turf from '@turf/turf'
-import * as zlib from 'zlib'
-import * as tar from 'tar'
-import * as fstream from 'fstream'
 
 async function getAndSaveFile(name) {
-	const file = fs.createWriteStream(`./${name}.json`);
-	const request = https.get(`https://bloombus.bloomu.edu/api/download/${name}/geojson`, response => {
+	const file = createWriteStream(`./${name}.json`);
+	const request = get(`https://bloombus.bloomu.edu/api/download/${name}/geojson`, response => {
 		if (response.statusCode !== 200)
 			console.log(`Response status for ${name} was ${response.statusCode}`);
 		response.pipe(file);
@@ -62,27 +53,27 @@ async function prepareData(inputs, expectedOutputs) {
 
 	console.log('Extracting data...');
 	const data = {
-		loops: JSON.parse(fs.readFileSync('./loops.json', 'utf8')),
-		shuttleData: JSON.parse(fs.readFileSync('./testData.json', 'utf8'))
+		loops: JSON.parse(readFileSync('./loops.json', 'utf8')),
+		shuttleData: JSON.parse(readFileSync('./testData.json', 'utf8'))
 	};
 
 	// get locations | NEED TO CLEAN THIS SECTION
 	// points
 	let pointArrA = [];
 	data.shuttleData[0].forEach(data => {
-		pointArrA.push(turf.point([data[0], data[1]]));
+		pointArrA.push(_point([data[0], data[1]]));
 	});
 	let pointArrB = [];
 	data.shuttleData[1].forEach(data => {
-		pointArrB.push(turf.point([data[0], data[1]]));
+		pointArrB.push(_point([data[0], data[1]]));
 	});
 	let pointArrC = [];
 	data.shuttleData[2].forEach(data => {
-		pointArrC.push(turf.point([data[0], data[1]]));
+		pointArrC.push(_point([data[0], data[1]]));
 	});
 	let pointArrD = [];
 	data.shuttleData[3].forEach(data => {
-		pointArrD.push(turf.point([data[0], data[1]]));
+		pointArrD.push(_point([data[0], data[1]]));
 	});
 	// speeds
 	let speedArrA = [];
@@ -120,25 +111,25 @@ async function prepareData(inputs, expectedOutputs) {
 	});
 	let testData = {
 		campusLoop: {
-			loop: turf.lineString(data.loops.features[0].geometry.coordinates),
+			loop: lineString(data.loops.features[0].geometry.coordinates),
 			points: pointArrA,
 			speeds: speedArrA,
 			times: timeArrA
 		},
 		downtownLoop: {
-			loop: turf.lineString(data.loops.features[2].geometry.coordinates),
+			loop: lineString(data.loops.features[2].geometry.coordinates),
 			points: pointArrB,
 			speeds: speedArrB,
 			times: timeArrB
 		},
 		latenightLoop: {
-			loop: turf.lineString(data.loops.features[l].geometry.coordinates),
+			loop: lineString(data.loops.features[l].geometry.coordinates),
 			points: pointArrC,
 			speeds: speedArrC,
 			times: timeArrC
 		},
 		walmartLoop: {
-			loop: turf.lineString(data.loops.features[w].geometry.coordinates),
+			loop: lineString(data.loops.features[w].geometry.coordinates),
 			points: pointArrD,
 			speeds: speedArrD,
 			times: timeArrD
@@ -152,14 +143,14 @@ async function prepareData(inputs, expectedOutputs) {
 	for (loop in testData) {
 		// snap points to the loop
 		for (point of loop.points) {
-			point = turf.nearestpointOnLine(loop.loop, point, {units: unitOfMeasurement});
+			point = nearestpointOnLine(loop.loop, point, {units: unitOfMeasurement});
 		}
 		loop.points.forEach((point, pointIndex) => {
 			point.properties.distances = [];
 			loop.points.forEach((pt, ptIndex) => {
 				if (point !== pt && loop.times[pointIndex] < loop.times[ptIndex]) {
 					point.properties.distances.push({
-						distance: turf.length(turf.lineSlice(point, pt, loop.loop), {units: unitOfMeasurement}),
+						distance: length(lineSlice(point, pt, loop.loop), {units: unitOfMeasurement}),
 						//point: pt,
 						pointIndex: ptIndex
 					});
@@ -220,10 +211,10 @@ async function learnBusArrival() {
 		units is the number of nodes in this layer
 		inputShape only needs to be set for the first hidden layer because it says the number of nodes in the input layer
 	*/
-	const model = tf.sequential({
+	const model = sequential({
 		layers: [
 			// Hidden Layer 1
-			tf.layers.dense({
+			_layers.dense({
 				units: 18,
 				activation: 'relu',
 				inputShape: [3],
@@ -231,14 +222,14 @@ async function learnBusArrival() {
 				biasConstraint: constraint
 			}),
 			// Hidden Layer 2
-			tf.layers.dense({
+			_layers.dense({
 				units: 12,
 				activation: 'relu',
 				kernelConstraint: constraint,
 				biasConstraint: constraint
 			}),
 			// Output Layer
-			tf.layers.dense({
+			_layers.dense({
 				units: 1,
 				activation: 'linear',
 				kernelConstraint: constraint,
@@ -253,22 +244,22 @@ async function learnBusArrival() {
 	*/
 	model.compile({
 		loss: 'meanSquaredError',
-		optimizer: tf.train.adam(0.01), // number is the learning rate
+		optimizer: train.adam(0.01), // number is the learning rate
 		metrics: ['accuracy']
 	});
 
-	const input = tf.tensor2d(inputs);
-	const output = tf.tensor2d(expectedOutputs);
+	const input = tensor2d(inputs);
+	const output = tensor2d(expectedOutputs);
 
 	// Prevent overtraining
-	let tfCallbacks = tf.callbacks.earlyStopping({
+	let tfCallbacks = _callbacks.earlyStopping({
 		monitor: 'val_loss',
 		patience: 15
 	});
 
 	tfCallbacks.onEpochEnd = async (epoch, logs) => {
 		console.log(`${epoch} : ${(logs.loss + '').replace(/Tensor\s+/, '')}`);
-		await tf.nextFrame();
+		await nextFrame();
 	};
 
 	console.log('Training...');
@@ -287,12 +278,11 @@ async function learnBusArrival() {
 }
 
 function uploadToServer() {
-	var shelljs = require('shelljs');
-	shelljs.exec('tar -zcvf model.tar.gz model');
+	exec('tar -zcvf model.tar.gz model');
 
 	// upload compressed model
 	console.log('Uploading...');
-	const file = fs.createReadStream('model.tar.gz');
+	const file = createReadStream('model.tar.gz');
 	const options = {
 		hostname: 'bloombus.bloomu.edu',
 		port: 80,
@@ -303,7 +293,7 @@ function uploadToServer() {
 			'Content-Length': Buffer.byteLength(file)
 		}
 	};
-	const req = https.request(options, res => {
+	const req = _request(options, res => {
 		console.log(`BloomBus Server StatusCode:\t${res.statusCode}`);
 		console.log(`BloomBus Server Headers:\t${res.headers}`);
 

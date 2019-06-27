@@ -2,10 +2,10 @@
   "name": "bloombus-ai",
   "version": "0.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --experimental-modules --no-warnings --expose-gc index.js",
+    "start": "node --experimental-modules --no-warnings --expose-gc --harmony index.mjs",
     "modernize": "sudo npm update -g @tensorflow/tfjs-node-gpu && sudo npm update -g @turf/turf && sudo npm update -g eslint && sudo npm update -g rollup && sudo npm update -g shelljs && sudo npm update -g npm@latest"
   },
   "engines": {
