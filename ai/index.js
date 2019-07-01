@@ -57,80 +57,53 @@ async function prepareData(inputs, expectedOutputs) {
 
 	// get locations | NEED TO CLEAN THIS SECTION
 	// points
-	let pointArrA = [];
-	data.shuttleData[0].forEach(data => {
-		pointArrA.push(_point([data[0], data[1]]));
-	});
-	let pointArrB = [];
-	data.shuttleData[1].forEach(data => {
-		pointArrB.push(_point([data[0], data[1]]));
-	});
-	let pointArrC = [];
-	data.shuttleData[2].forEach(data => {
-		pointArrC.push(_point([data[0], data[1]]));
-	});
-	let pointArrD = [];
-	data.shuttleData[3].forEach(data => {
-		pointArrD.push(_point([data[0], data[1]]));
-	});
+	function getPoints(idx) {
+		let pointArr = [];
+		data.shuttleData[idx].forEach(data => {
+			pointArr.push(_point([data[0], data[1]]));
+		});
+		return pointArr;
+	}
 	// speeds
-	let speedArrA = [];
-	data.shuttleData[0].forEach(data => {
-		speedArrA.push(data[2]);
-	});
-	let speedArrB = [];
-	data.shuttleData[1].forEach(data => {
-		speedArrB.push(data[2]);
-	});
-	let speedArrC = [];
-	data.shuttleData[2].forEach(data => {
-		speedArrC.push(data[2]);
-	});
-	let speedArrD = [];
-	data.shuttleData[3].forEach(data => {
-		speedArrD.push(data[2]);
-	});
+	function getSpeeds(idx) {
+		let speedArr = [];
+		data.shuttleData[idx].forEach(data => {
+			speedArr.push(data[2]);
+		});
+		return speedArr;
+	}
 	// times
-	let timeArrA = [];
-	data.shuttleData[0].forEach(data => {
-		timeArrA.push(data[3]);
-	});
-	let timeArrB = [];
-	data.shuttleData[1].forEach(data => {
-		timeArrB.push(data[3]);
-	});
-	let timeArrC = [];
-	data.shuttleData[2].forEach(data => {
-		timeArrC.push(data[3]);
-	});
-	let timeArrD = [];
-	data.shuttleData[3].forEach(data => {
-		timeArrD.push(data[3]);
-	});
+	function getTimes(idx) {
+		let timeArr = [];
+		data.shuttleData[idx].forEach(data => {
+			timeArr.push(data[3]);
+		});
+		return timeArr;
+	}
 	let testData = {
 		campusLoop: {
 			loop: lineString(data.loops.features[0].geometry.coordinates),
-			points: pointArrA,
-			speeds: speedArrA,
-			times: timeArrA
+			points: getPoints(0),
+			speeds: getSpeeds(0),
+			times: getTimes(0)
 		},
 		downtownLoop: {
 			loop: lineString(data.loops.features[2].geometry.coordinates),
-			points: pointArrB,
-			speeds: speedArrB,
-			times: timeArrB
+			points: getPoints(1),
+			speeds: getSpeeds(1),
+			times: getTimes(1)
 		},
 		latenightLoop: {
 			loop: lineString(data.loops.features[l].geometry.coordinates),
-			points: pointArrC,
-			speeds: speedArrC,
-			times: timeArrC
+			points: getPoints(2),
+			speeds: getSpeeds(2),
+			times: getTimes(2)
 		},
 		walmartLoop: {
 			loop: lineString(data.loops.features[w].geometry.coordinates),
-			points: pointArrD,
-			speeds: speedArrD,
-			times: timeArrD
+			points: getPoints(3),
+			speeds: getSpeeds(3),
+			times: getTimes(3)
 		}
 	};
 
