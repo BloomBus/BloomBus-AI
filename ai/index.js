@@ -2,7 +2,7 @@
  * Trains the AI to predict when a bus will arrive at a bus stop.
  * 
  * @author Michael O'Donnell
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 'use strict';
@@ -11,11 +11,12 @@ import { createWriteStream, readFileSync, createReadStream } from 'fs';
 // If John Gibson's download site can be accessed from Node.js
 import { get, request as _request } from 'https';
 import { sequential, layers as _layers, train, tensor2d, callbacks as _callbacks, nextFrame } from '@tensorflow/tfjs-node-gpu';
-import { point as _point, lineString, nearestPointOnLine, length, lineSlice } from '@turf/turf';
+import { booleanPointOnLine, point as _point, lineString, nearestPointOnLine, length, lineSlice } from '@turf/turf';
 import { exec } from 'shelljs';
 
 // documentation for firebase can be found at https://firebase.google.com/docs/
 // documentation for tensorflow.js can be found at https://js.tensorflow.org/api/latest/
+// documentation for turf can be found at https://turfjs.org/
 
 async function getAndSaveFile(name) {
 	const file = createWriteStream(`./${name}.json`);
@@ -46,36 +47,33 @@ async function getData(...args) {
 
 async function prepareData(inputs, expectedOutputs) {
 	console.log('Retrieving data...');
-	// If John Gibson's download site can be accessed from Node.js, remove the firebase import
-	const garbage = await getData('loops', 'testData');
+	const garbage = await getData('loops', 'testData', 'stops');
 
 	console.log('Extracting data...');
 	const data = {
 		loops: JSON.parse(readFileSync('./loops.json', 'utf8')),
-		shuttleData: JSON.parse(readFileSync('./testData.json', 'utf8'))
+		shuttleData: JSON.parse(readFileSync('./testData.json', 'utf8')),
+		stops: JSON.parse(readFileSync('./stops.json', 'utf8'))
 	};
 
 	// get locations
-	// points
-	function getPoints(idx) {
+	function getPoints(index) {
 		let pointArr = [];
-		data.shuttleData[idx].forEach(data => {
+		data.shuttleData[index].forEach(data => {
 			pointArr.push(_point([data[0], data[1]]));
 		});
 		return pointArr;
 	}
-	// speeds
-	function getSpeeds(idx) {
+	function getSpeeds(index) {
 		let speedArr = [];
-		data.shuttleData[idx].forEach(data => {
+		data.shuttleData[index].forEach(data => {
 			speedArr.push(data[2]);
 		});
 		return speedArr;
 	}
-	// times
-	function getTimes(idx) {
+	function getTimes(index) {
 		let timeArr = [];
-		data.shuttleData[idx].forEach(data => {
+		data.shuttleData[index].forEach(data => {
 			timeArr.push(data[3]);
 		});
 		return timeArr;
@@ -120,9 +118,18 @@ async function prepareData(inputs, expectedOutputs) {
 			point.properties.distances = [];
 			loop.points.forEach((pt, ptIndex) => {
 				if (point !== pt && loop.times[pointIndex] < loop.times[ptIndex]) {
+					const slice = lineSlice(point, pt, loop.loop);
+					let num_of_stops = 0;
+					for (stop in data.stops) {
+						if (booleanPointOnLine(_point(stop.geometry.coordinates, slice))) {
+							num_of_stops++;
+						}
+					}
+					num_of_stops--; // booleanPointOnLine will include the target bus stop (remove this line if we want that included)
 					point.properties.distances.push({
-						distance: length(lineSlice(point, pt, loop.loop), {units: unitOfMeasurement}),
-						//point: pt,
+						distance: length(slice, {units: unitOfMeasurement}),
+						// TODO: add number of intersections along path
+						numOfStops: num_of_stops,
 						pointIndex: ptIndex
 					});
 				}
@@ -138,7 +145,7 @@ async function prepareData(inputs, expectedOutputs) {
 				inputs.push([
 					dist.distance,
 					// TODO: add number of intersections along path
-					// TODO: add number of bus stops between point a and point b
+					dist.numOfStops,
 					loop.speeds[pointIndex],
 					loop.times[pointIndex]
 				]);
@@ -169,7 +176,7 @@ async function learnBusArrival() {
 			_layers.dense({
 				units: 18,
 				activation: 'relu',
-				inputShape: [3]
+				inputShape: [inputs[0].length] // Use the length of one of the input vectors as input size/shape
 			}),
 			// Hidden Layer 2
 			_layers.dense({
