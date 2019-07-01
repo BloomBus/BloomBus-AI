@@ -55,7 +55,7 @@ async function prepareData(inputs, expectedOutputs) {
 		shuttleData: JSON.parse(readFileSync('./testData.json', 'utf8'))
 	};
 
-	// get locations | NEED TO CLEAN THIS SECTION
+	// get locations
 	// points
 	function getPoints(idx) {
 		let pointArr = [];
@@ -159,23 +159,6 @@ async function learnBusArrival() {
 	console.log('Creating model...');
 
 	/*
-		WebGL on smartphones only supports IEEE-754 16-bit floating-point textures, this constraint will keep the model within those restrictions
-		NOTE: This is claimed primarily by Tensorflow.js itself with no external links to further documentation (see https://www.tensorflow.org/js/guide/platform_environment#precision)
-	*/
-
-
-	/*
-		Deprecate if ai runs on server
-
-	const constraint = tf.constraints.minMaxNorm({
-		minValue: 0.000000059605,
-		maxValue: 65504,
-		axis: 0,
-		rate: 1.0
-	});
-	*/
-
-	/*
 		type of model we are using (here, a simple linearly layered structure)
 		units is the number of nodes in this layer
 		inputShape only needs to be set for the first hidden layer because it says the number of nodes in the input layer
@@ -186,23 +169,17 @@ async function learnBusArrival() {
 			_layers.dense({
 				units: 18,
 				activation: 'relu',
-				inputShape: [3],
-				kernelConstraint: constraint,
-				biasConstraint: constraint
+				inputShape: [3]
 			}),
 			// Hidden Layer 2
 			_layers.dense({
 				units: 12,
-				activation: 'relu',
-				kernelConstraint: constraint,
-				biasConstraint: constraint
+				activation: 'relu'
 			}),
 			// Output Layer
 			_layers.dense({
 				units: 1,
-				activation: 'linear',
-				kernelConstraint: constraint,
-				biasConstraint: constraint
+				activation: 'linear'
 			})
 		]
 	});
@@ -263,8 +240,7 @@ function uploadToServer() {
 		}
 	};
 	const req = _request(options, res => {
-		console.log(`BloomBus Server StatusCode:\t${res.statusCode}`);
-		console.log(`BloomBus Server Headers:\t${res.headers}`);
+		console.log(`BloomBus Server StatusCode:\t${res.statusCode}\nBloomBus Server Headers:\t${res.headers}`);
 
 		res.on('data', d => {
 			process.stdout.write(d);
@@ -272,13 +248,12 @@ function uploadToServer() {
 
 		res.on('error', e => {
 			console.error(e);
-		})
+		});
 	}).on('error', e => {
 		console.error(e);
 	});
 
 	req.write(file);
-
 	req.end();
 	console.log('Success!');
 }
