@@ -121,7 +121,7 @@ async function prepareData(inputs, expectedOutputs) {
 					const slice = lineSlice(point, pt, loop.loop);
 					let num_of_stops = 0;
 					for (stop in data.stops) {
-						if (booleanPointOnLine(_point(stop.geometry.coordinates, slice))) {
+						if (booleanPointOnLine(_point(stop.geometry.coordinates), slice)) {
 							num_of_stops++;
 						}
 					}
