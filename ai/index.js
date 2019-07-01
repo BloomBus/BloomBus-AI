@@ -2,7 +2,7 @@
  * Trains the AI to predict when a bus will arrive at a bus stop.
  * 
  * @author Michael O'Donnell
- * @version 0.2.0
+ * @version 0.3.0
  */
 
 'use strict';
@@ -47,16 +47,17 @@ async function getData(...args) {
 
 async function prepareData(inputs, expectedOutputs) {
 	console.log('Retrieving data...');
-	const garbage = await getData('loops', 'testData', 'stops');
+	const garbage = await getData('loops', 'testData', 'stops', 'intersections');
 
 	console.log('Extracting data...');
 	const data = {
+		intersections: JSON.parse(readFileSync('./intersections.json', 'utf8')),
 		loops: JSON.parse(readFileSync('./loops.json', 'utf8')),
 		shuttleData: JSON.parse(readFileSync('./testData.json', 'utf8')),
 		stops: JSON.parse(readFileSync('./stops.json', 'utf8'))
 	};
 
-	// get locations
+	// gather data
 	function getPoints(index) {
 		let pointArr = [];
 		data.shuttleData[index].forEach(data => {
@@ -119,17 +120,23 @@ async function prepareData(inputs, expectedOutputs) {
 			loop.points.forEach((pt, ptIndex) => {
 				if (point !== pt && loop.times[pointIndex] < loop.times[ptIndex]) {
 					const slice = lineSlice(point, pt, loop.loop);
-					let num_of_stops = 0;
+					let num_of_intersections = 0;
+					for (intersection of data.intersections) {
+						if (booleanPointOnLine(_point(intersection.geometry.coordinates), slice)) {
+							num_of_intersections++;
+						}
+					}
+					let numOfStops = 0;
 					for (stop in data.stops) {
 						if (booleanPointOnLine(_point(stop.geometry.coordinates), slice)) {
-							num_of_stops++;
+							numOfStops++;
 						}
 					}
 					num_of_stops--; // booleanPointOnLine will include the target bus stop (remove this line if we want that included)
 					point.properties.distances.push({
 						distance: length(slice, {units: unitOfMeasurement}),
-						// TODO: add number of intersections along path
-						numOfStops: num_of_stops,
+						numOfIntersections: num_of_intersections,
+						numOfBusStops: numOfStops,
 						pointIndex: ptIndex
 					});
 				}
@@ -144,8 +151,8 @@ async function prepareData(inputs, expectedOutputs) {
 			point.properties.distances.forEach(dist => {
 				inputs.push([
 					dist.distance,
-					// TODO: add number of intersections along path
-					dist.numOfStops,
+					dist.numOfIntersections,
+					dist.numOfBusStops,
 					loop.speeds[pointIndex],
 					loop.times[pointIndex]
 				]);
