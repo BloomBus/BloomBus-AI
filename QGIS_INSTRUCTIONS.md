@@ -1,8 +1,8 @@
 ## Instructions for getting to QGIS to edit bus loop information
 
-1. Find the microSD card (likely inside a microSD to SD card adapter) labeled **RPi QGIS**
+1. Find the microSD card (likely inside a microSD to SD card adapter in the ACM room) labeled **RPi QGIS**
 
-2. Insert it into a Raspberry Pi (RPi) (preferably a RPi 3 Model B+)
+2. Insert it into a Raspberry Pi (RPi) (preferably a RPi 3 Model B+) and plug the RPi into a power source
 
 3. Connect the RPi to a computer with a GUI via an ethernet cable (preferably running a Unix-like operating system)
 
@@ -25,6 +25,8 @@
 <p align="center">OR</p>
 
 11. Exit the ssh session with `exit` and then unplug the RPi
+
+12. Finally, put the microSD card back in the adapter and put it away
 
 ## Instructions for using QGIS to edit bus loop information
 
