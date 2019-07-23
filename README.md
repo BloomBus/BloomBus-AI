@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # BloomBus-AI
 
 BloomBus-AI is the code behind the AI powering the bus arrival time predictions in [BloomBus-Client][] which will be trained on a [Nvidia Jetson TX2 Developer Kit][] and then used in [BloomBus-Server][].
