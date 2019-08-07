@@ -194,10 +194,10 @@ async function learnBusArrival() {
   console.log("Creating model...");
 
   /*
-		type of model we are using (here, a simple linearly layered structure)
-		units is the number of nodes in this layer
-		inputShape only needs to be set for the first hidden layer because it says the number of nodes in the input layer
-	*/
+    type of model we are using (here, a simple linearly layered structure)
+    units is the number of nodes in this layer
+    inputShape only needs to be set for the first hidden layer because it says the number of nodes in the input layer
+  */
   const model = sequential({
     layers: [
       // Hidden Layer 1
@@ -220,9 +220,9 @@ async function learnBusArrival() {
   });
 
   /*
-		adds the loss function, optimizer, and metrics
-		does not do anything beyond adding those three attributes (no C-like compilation)
-	*/
+    adds the loss function, optimizer, and metrics
+    does not do anything beyond adding those three attributes (no C-like compilation)
+  */
   model.compile({
     loss: "meanSquaredError",
     optimizer: train.adam(0.01), // number is the learning rate
