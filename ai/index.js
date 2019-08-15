@@ -63,62 +63,95 @@ async function getData(...args) {
 
 async function prepareData(inputs, expectedOutputs) {
   console.log("Retrieving data...");
-  const garbage = await getData("loops", "testData", "stops", "intersections");
+  const garbage = await getData(
+    "loops",
+    "historical-logs",
+    "stops",
+    "intersections"
+  );
 
   console.log("Extracting data...");
   const data = {
     intersections: JSON.parse(readFileSync("./intersections.json", "utf8")),
     loops: JSON.parse(readFileSync("./loops.json", "utf8")),
-    shuttleData: JSON.parse(readFileSync("./testData.json", "utf8")),
+    historicalLogs: JSON.parse(readFileSync("./historical-logs.json", "utf8")),
     stops: JSON.parse(readFileSync("./stops.json", "utf8"))
   };
 
+  // sort data by bus loop
+  let sortedHistoricalLogs = {
+    campusLoop: [],
+    downtownLoop: [],
+    latenightLoop: [],
+    walmartLoop: []
+  };
+
+  for (log in data.historicalLogs) {
+    switch (log.loopKey) {
+      case "campus":
+        sortedHistoricalLogs.campusLoop.push(log);
+        break;
+      case "downtown":
+        sortedHistoricalLogs.downtownLoop.push(log);
+        break;
+      case "latenight":
+        sortedHistoricalLogs.latenightLoop.push(log);
+        break;
+      case "walmart":
+        sortedHistoricalLogs.walmartLoop.push(log);
+        break;
+      default:
+        console.error(`Unsorted loop name present in database: ${log.loopKey}`);
+        process.exit(2);
+    }
+  }
+
   // gather data
-  function getPoints(index) {
+  function getPoints(member) {
     let pointArr = [];
-    data.shuttleData[index].forEach(data => {
-      pointArr.push(_point([data[0], data[1]]));
+    sortedHistoricalLogs[member]["histPoints"].forEach(data => {
+      pointArr.push(_point([data.coordinates[0], data.coordinates[1]]));
     });
     return pointArr;
   }
-  function getSpeeds(index) {
+  function getSpeeds(member) {
     let speedArr = [];
-    data.shuttleData[index].forEach(data => {
-      speedArr.push(data[2]);
+    sortedHistoricalLogs[member]["histPoints"].forEach(data => {
+      speedArr.push(data.speed);
     });
     return speedArr;
   }
-  function getTimes(index) {
+  function getTimes(member) {
     let timeArr = [];
-    data.shuttleData[index].forEach(data => {
-      timeArr.push(data[3]);
+    sortedHistoricalLogs[member]["histPoints"].forEach(data => {
+      timeArr.push(data.timestamp);
     });
     return timeArr;
   }
-  let testData = {
+  let trainingData = {
     campusLoop: {
       loop: lineString(data.loops.features[0].geometry.coordinates),
-      points: getPoints(0),
-      speeds: getSpeeds(0),
-      times: getTimes(0)
+      points: getPoints("campus"),
+      speeds: getSpeeds("campus"),
+      times: getTimes("campus")
     },
     downtownLoop: {
       loop: lineString(data.loops.features[2].geometry.coordinates),
-      points: getPoints(1),
-      speeds: getSpeeds(1),
-      times: getTimes(1)
+      points: getPoints("downtown"),
+      speeds: getSpeeds("downtown"),
+      times: getTimes("downtown")
     },
     latenightLoop: {
       loop: lineString(data.loops.features[l].geometry.coordinates),
-      points: getPoints(2),
-      speeds: getSpeeds(2),
-      times: getTimes(2)
+      points: getPoints("latenight"),
+      speeds: getSpeeds("latenight"),
+      times: getTimes("latenight")
     },
     walmartLoop: {
       loop: lineString(data.loops.features[w].geometry.coordinates),
-      points: getPoints(3),
-      speeds: getSpeeds(3),
-      times: getTimes(3)
+      points: getPoints("walmart"),
+      speeds: getSpeeds("walmart"),
+      times: getTimes("walmart")
     }
   };
 
@@ -126,7 +159,7 @@ async function prepareData(inputs, expectedOutputs) {
   console.log("Analysing data...");
   const unitOfMeasurement = "kilometers";
 
-  for (loop in testData) {
+  for (loop in trainingData) {
     // snap points to the loop
     for (point of loop.points) {
       point = nearestPointOnLine(loop.loop, point, {
@@ -169,7 +202,7 @@ async function prepareData(inputs, expectedOutputs) {
 
   // prepare data for training
   console.log("Preparing data...");
-  for (loop in testData) {
+  for (loop in trainingData) {
     loop.points.forEach((point, pointIndex) => {
       point.properties.distances.forEach(dist => {
         inputs.push([
