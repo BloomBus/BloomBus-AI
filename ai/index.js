@@ -268,7 +268,7 @@ async function prepareData(inputs, expectedOutputs) {
           numOfIntersections++;
 
       inputs.push([
-        length(slice, { units: unitsOfMeasurement }), // distance
+        length(slice, { units: unitsOfMeasurement }) * 1000, // distance (convert from kilometers to meters)
         numOfBusStops,
         numOfIntersections,
         speed
